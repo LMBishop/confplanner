@@ -41,11 +41,6 @@ func (s *service) GenerateIcalForCalendar(calendar sqlc.Calendar) (string, error
 		return "", err
 	}
 
-	sched, _, err := s.scheduleService.GetSchedule()
-	if err != nil {
-		return "", err
-	}
-
 	events := make([]schedule.Event, 0)
 	for _, favourite := range *favourites {
 		event := s.scheduleService.GetEventByID(favourite.EventID.Int32)
@@ -66,8 +61,8 @@ func (s *service) GenerateIcalForCalendar(calendar sqlc.Calendar) (string, error
 
 		ret += "BEGIN:VEVENT\n"
 		ret += "SUMMARY:" + event.Title + "\n"
-		ret += "DTSTART;TZID=" + sched.Conference.TimeZoneName + ":" + utcStart.Format("20060102T150405Z") + "\n"
-		ret += "DTEND;TZID=" + sched.Conference.TimeZoneName + ":" + utcEnd.Format("20060102T150405Z") + "\n"
+		ret += "DTSTART:" + utcStart.Format("20060102T150405Z") + "\n"
+		ret += "DTEND:" + utcEnd.Format("20060102T150405Z") + "\n"
 		ret += "LOCATION:" + event.Room + "\n"
 		ret += "DESCRIPTION;ENCODING=QUOTED-PRINTABLE:" + bluemonday.StrictPolicy().Sanitize(strings.Replace(event.Abstract, "\n", "\\n", -1)) + "\\nLast Synchronised: " + now.Format(time.DateTime) + "\n"
 		ret += "END:VEVENT\n"
