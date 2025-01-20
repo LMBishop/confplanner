@@ -64,7 +64,7 @@ func (s *service) GenerateIcalForCalendar(calendar sqlc.Calendar) (string, error
 		ret += "DTSTART:" + utcStart.Format("20060102T150405Z") + "\n"
 		ret += "DTEND:" + utcEnd.Format("20060102T150405Z") + "\n"
 		ret += "LOCATION:" + event.Room + "\n"
-		ret += "DESCRIPTION;ENCODING=QUOTED-PRINTABLE:" + bluemonday.StrictPolicy().Sanitize(strings.Replace(event.Abstract, "\n", "\\n", -1)) + "\\nLast Synchronised: " + now.Format(time.DateTime) + "\n"
+		ret += "DESCRIPTION;ENCODING=QUOTED-PRINTABLE:" + bluemonday.StrictPolicy().Sanitize(strings.Replace(event.Abstract, "\n", "\\n", -1)) + "\\n\\nconfplanner: last synchronised: " + now.Format(time.RFC1123) + "\n"
 		ret += "END:VEVENT\n"
 	}
 	ret += "END:VCALENDAR\n"
