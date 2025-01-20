@@ -17,7 +17,8 @@ type Config struct {
 	Conference struct {
 		ScheduleURL string `yaml:"scheduleURL"`
 	} `yaml:"conference"`
-	AcceptRegistrations bool `yaml:"acceptRegistrations"`
+	AcceptRegistrations bool   `yaml:"acceptRegistrations"`
+	BaseURL             string `yaml:"baseURL"`
 }
 
 func ReadConfig(configPath string, dst *Config) error {

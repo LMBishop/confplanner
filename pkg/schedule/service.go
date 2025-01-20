@@ -10,85 +10,22 @@ import (
 )
 
 type Service interface {
-	GetSchedule() (*Schedule, *time.Time, error)
-}
-
-type Schedule struct {
-	XMLName    xml.Name   `json:"-" xml:"schedule"`
-	Conference Conference `json:"conference" xml:"conference"`
-	Tracks     []Track    `json:"tracks" xml:"tracks>track"`
-	Days       []Day      `json:"days" xml:"day"`
-}
-
-type Conference struct {
-	Title            string `json:"title" xml:"title"`
-	Venue            string `json:"venue" xml:"venue"`
-	City             string `json:"city" xml:"city"`
-	Start            string `json:"start" xml:"start"`
-	End              string `json:"end" xml:"end"`
-	Days             int    `json:"days" xml:"days"`
-	DayChange        string `json:"dayChange" xml:"day_change"`
-	TimeslotDuration string `json:"timeslotDuration" xml:"timeslot_duration"`
-	BaseURL          string `json:"baseUrl" xml:"base_url"`
-	TimeZoneName     string `json:"timeZoneName" xml:"time_zone_name"`
-}
-
-type Track struct {
-	Name string `json:"name" xml:",chardata"`
-}
-
-type Day struct {
-	Date  string `json:"date" xml:"date,attr"`
-	Start string `json:"start" xml:"start"`
-	End   string `json:"end" xml:"end"`
-	Rooms []Room `json:"rooms" xml:"room"`
-}
-
-type Room struct {
-	Name   string  `json:"name" xml:"name,attr"`
-	Events []Event `json:"events" xml:"event"`
-}
-
-type Event struct {
-	ID          int          `json:"id" xml:"id,attr"`
-	GUID        string       `json:"guid" xml:"guid,attr"`
-	Date        string       `json:"date" xml:"date"`
-	Start       string       `json:"start" xml:"start"`
-	Duration    string       `json:"duration" xml:"duration"`
-	Room        string       `json:"room" xml:"room"`
-	URL         string       `json:"url" xml:"url"`
-	Track       string       `json:"track" xml:"track"`
-	Type        string       `json:"type" xml:"type"`
-	Title       string       `json:"title" xml:"title"`
-	Abstract    string       `json:"abstract" xml:"abstract"`
-	Persons     []Person     `json:"persons" xml:"persons>person"`
-	Attachments []Attachment `json:"attachments" xml:"attachments>attachment"`
-	Links       []Link       `json:"links" xml:"links>link"`
-}
-
-type Person struct {
-	ID   int    `json:"id" xml:"id,attr"`
-	Name string `json:"name" xml:",chardata"`
-}
-
-type Attachment struct {
-	Type string `json:"string" xml:"id,attr"`
-	Href string `json:"href" xml:"href,attr"`
-	Name string `json:"name" xml:",chardata"`
-}
-
-type Link struct {
-	Href string `json:"href" xml:"href,attr"`
-	Name string `json:"name" xml:",chardata"`
+	GetSchedule() (*Schedule, time.Time, error)
+	GetEventByID(id int32) *Event
 }
 
 type service struct {
-	schedule     *Schedule
 	pentabarfUrl string
-	lastUpdated  time.Time
-	lock         sync.Mutex
+
+	schedule    *Schedule
+	eventsById  map[int32]Event
+	lastUpdated time.Time
+	accessLock  sync.RWMutex
+	updateLock  sync.Mutex
 }
 
+// TODO: Create a service implementation that persists to DB
+// and isn't in memory
 func NewService(pentabarfUrl string) (Service, error) {
 	service := &service{
 		pentabarfUrl: pentabarfUrl,
@@ -102,15 +39,25 @@ func NewService(pentabarfUrl string) (Service, error) {
 	return service, nil
 }
 
-func (s *service) GetSchedule() (*Schedule, *time.Time, error) {
-	if s.hasScheduleExpired() {
-		err := s.updateSchedule()
-		if err != nil {
-			return nil, nil, err
-		}
+func (s *service) GetSchedule() (*Schedule, time.Time, error) {
+	err := s.updateSchedule()
+	if err != nil {
+		return nil, time.Time{}, err
 	}
 
-	return s.schedule, &s.lastUpdated, nil
+	s.accessLock.RLock()
+	defer s.accessLock.RUnlock()
+
+	return s.schedule, s.lastUpdated, nil
+}
+
+func (s *service) GetEventByID(id int32) *Event {
+	s.accessLock.RLock()
+	defer s.accessLock.RUnlock()
+
+	event := s.eventsById[id]
+
+	return &event
 }
 
 func (s *service) hasScheduleExpired() bool {
@@ -119,12 +66,15 @@ func (s *service) hasScheduleExpired() bool {
 }
 
 func (s *service) updateSchedule() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
 	if !s.hasScheduleExpired() {
 		return nil
 	}
+
+	if !s.updateLock.TryLock() {
+		// don't block if another goroutine is already fetching
+		return nil
+	}
+	defer s.updateLock.Unlock()
 
 	res, err := http.Get(s.pentabarfUrl)
 	if err != nil {
@@ -133,14 +83,34 @@ func (s *service) updateSchedule() error {
 
 	reader := bufio.NewReader(res.Body)
 
-	var schedule Schedule
+	var schedule schedule
 
 	decoder := xml.NewDecoder(reader)
 	if err := decoder.Decode(&schedule); err != nil {
 		return fmt.Errorf("failed to decode XML: %w", err)
 	}
 
-	s.schedule = &schedule
+	var newSchedule Schedule
+	err = newSchedule.Scan(schedule)
+	if err != nil {
+		return fmt.Errorf("failed to scan schedule: %w", err)
+	}
+
+	s.accessLock.Lock()
+	defer s.accessLock.Unlock()
+
+	s.schedule = &newSchedule
 	s.lastUpdated = time.Now()
+
+	s.eventsById = make(map[int32]Event)
+
+	for _, day := range newSchedule.Days {
+		for _, room := range day.Rooms {
+			for _, event := range room.Events {
+				s.eventsById[event.ID] = event
+			}
+		}
+	}
+
 	return nil
 }

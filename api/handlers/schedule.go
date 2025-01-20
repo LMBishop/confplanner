@@ -18,7 +18,7 @@ func GetSchedule(service schedule.Service) fiber.Handler {
 			Code: fiber.StatusOK,
 			Data: &dto.GetScheduleResponse{
 				Schedule:    nilslice.Initialize(*schedule),
-				LastUpdated: *lastUpdated,
+				LastUpdated: lastUpdated,
 			},
 		}
 	}

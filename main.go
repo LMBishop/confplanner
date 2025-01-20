@@ -7,8 +7,10 @@ import (
 
 	"github.com/LMBishop/confplanner/api"
 	config "github.com/LMBishop/confplanner/internal"
+	"github.com/LMBishop/confplanner/pkg/calendar"
 	"github.com/LMBishop/confplanner/pkg/database"
 	"github.com/LMBishop/confplanner/pkg/favourites"
+	"github.com/LMBishop/confplanner/pkg/ical"
 	"github.com/LMBishop/confplanner/pkg/schedule"
 	"github.com/LMBishop/confplanner/pkg/user"
 )
@@ -42,12 +44,16 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("failed to create schedule service: %w", err)
 	}
+	calendarService := calendar.NewService(pool)
+	icalService := ical.NewService(favouritesService, scheduleService)
 
 	app := api.NewServer(api.ApiServices{
 		UserService:       userService,
 		FavouritesService: favouritesService,
 		ScheduleService:   scheduleService,
-	})
+		CalendarService:   calendarService,
+		IcalService:       icalService,
+	}, c.BaseURL)
 
 	slog.Info("Server is listening", "host", c.Server.Host, "port", c.Server.Port)
 

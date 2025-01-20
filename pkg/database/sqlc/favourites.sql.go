@@ -67,42 +67,6 @@ func (q *Queries) DeleteFavouriteByEventDetails(ctx context.Context, arg DeleteF
 	return result.RowsAffected(), nil
 }
 
-const deleteFavouriteByEventGuid = `-- name: DeleteFavouriteByEventGuid :execrows
-DELETE FROM favourites
-WHERE event_guid = $1 AND user_id = $2
-`
-
-type DeleteFavouriteByEventGuidParams struct {
-	EventGuid pgtype.UUID `json:"event_guid"`
-	UserID    int32       `json:"user_id"`
-}
-
-func (q *Queries) DeleteFavouriteByEventGuid(ctx context.Context, arg DeleteFavouriteByEventGuidParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteFavouriteByEventGuid, arg.EventGuid, arg.UserID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
-const deleteFavouriteByEventId = `-- name: DeleteFavouriteByEventId :execrows
-DELETE FROM favourites
-WHERE event_id = $1 AND user_id = $2
-`
-
-type DeleteFavouriteByEventIdParams struct {
-	EventID pgtype.Int4 `json:"event_id"`
-	UserID  int32       `json:"user_id"`
-}
-
-func (q *Queries) DeleteFavouriteByEventId(ctx context.Context, arg DeleteFavouriteByEventIdParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteFavouriteByEventId, arg.EventID, arg.UserID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const getFavouritesForUser = `-- name: GetFavouritesForUser :many
 SELECT id, user_id, event_guid, event_id FROM favourites
 WHERE user_id = $1

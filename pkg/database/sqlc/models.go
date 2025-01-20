@@ -8,6 +8,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Calendar struct {
+	ID     int32  `json:"id"`
+	UserID int32  `json:"user_id"`
+	Name   string `json:"name"`
+	Key    string `json:"key"`
+}
+
 type Favourite struct {
 	ID        int32       `json:"id"`
 	UserID    int32       `json:"user_id"`

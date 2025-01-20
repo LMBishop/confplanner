@@ -8,7 +8,9 @@ import (
 	"github.com/LMBishop/confplanner/api/dto"
 	"github.com/LMBishop/confplanner/api/handlers"
 	"github.com/LMBishop/confplanner/api/middleware"
+	"github.com/LMBishop/confplanner/pkg/calendar"
 	"github.com/LMBishop/confplanner/pkg/favourites"
+	"github.com/LMBishop/confplanner/pkg/ical"
 	"github.com/LMBishop/confplanner/pkg/schedule"
 	"github.com/LMBishop/confplanner/pkg/user"
 	"github.com/gofiber/fiber/v2"
@@ -19,9 +21,11 @@ type ApiServices struct {
 	UserService       user.Service
 	FavouritesService favourites.Service
 	ScheduleService   schedule.Service
+	CalendarService   calendar.Service
+	IcalService       ical.Service
 }
 
-func NewServer(apiServices ApiServices) *fiber.App {
+func NewServer(apiServices ApiServices, baseURL string) *fiber.App {
 	sessionStore := session.New(session.Config{
 		Expiration:     24 * time.Hour,
 		KeyLookup:      "cookie:confplanner_session",
@@ -62,6 +66,11 @@ func NewServer(apiServices ApiServices) *fiber.App {
 	app.Delete("/favourites", requireAuthenticated, handlers.DeleteFavourite(apiServices.FavouritesService))
 
 	app.Get("/schedule", requireAuthenticated, handlers.GetSchedule(apiServices.ScheduleService))
+
+	app.Get("/calendar", requireAuthenticated, handlers.GetCalendar(apiServices.CalendarService, baseURL))
+	app.Post("/calendar", requireAuthenticated, handlers.CreateCalendar(apiServices.CalendarService, baseURL))
+	app.Delete("/calendar", requireAuthenticated, handlers.DeleteCalendar(apiServices.CalendarService))
+	app.Use("/calendar/ical", handlers.GetIcal(apiServices.IcalService, apiServices.CalendarService))
 
 	return app
 }
