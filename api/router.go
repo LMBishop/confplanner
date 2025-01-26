@@ -1,6 +1,8 @@
 package api
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"log/slog"
 	"time"
@@ -27,9 +29,11 @@ type ApiServices struct {
 
 func NewServer(apiServices ApiServices, baseURL string) *fiber.App {
 	sessionStore := session.New(session.Config{
-		Expiration:     24 * time.Hour,
+		Expiration:     7 * 24 * time.Hour,
+		KeyGenerator:   generateSessionToken,
 		KeyLookup:      "cookie:confplanner_session",
-		CookieSameSite: "None",
+		CookieSameSite: "Strict",
+		CookieSecure:   true,
 	})
 
 	app := fiber.New(fiber.Config{
@@ -73,4 +77,12 @@ func NewServer(apiServices ApiServices, baseURL string) *fiber.App {
 	app.Use("/calendar/ical", handlers.GetIcal(apiServices.IcalService, apiServices.CalendarService))
 
 	return app
+}
+
+func generateSessionToken() string {
+	b := make([]byte, 100)
+	if _, err := rand.Read(b); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(b)
 }

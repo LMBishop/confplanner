@@ -2,6 +2,7 @@ package ical
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,26 +49,38 @@ func (s *service) GenerateIcalForCalendar(calendar sqlc.Calendar) (string, error
 	}
 
 	now := time.Now()
+	counter := 0
 
 	// https://www.rfc-editor.org/rfc/rfc5545.html
 
-	ret := "BEGIN:VCALENDAR\n"
-	ret += "VERSION:2.0\n"
-	ret += "METHOD:PUBLISH\n"
-	ret += "X-WR-CALNAME:confplanner calendar\n"
+	ret := "BEGIN:VCALENDAR\r\n"
+	ret += "PRODID:-//LMBishop//confplanner//EN\r\n"
+	ret += "VERSION:2.0\r\n"
+	ret += "METHOD:PUBLISH\r\n"
+	ret += "X-WR-CALNAME:confplanner calendar\r\n"
 	for _, event := range events {
 		utcStart := event.Start.UTC()
 		utcEnd := event.End.UTC()
 
-		ret += "BEGIN:VEVENT\n"
-		ret += "SUMMARY:" + event.Title + "\n"
-		ret += "DTSTART:" + utcStart.Format("20060102T150405Z") + "\n"
-		ret += "DTEND:" + utcEnd.Format("20060102T150405Z") + "\n"
-		ret += "LOCATION:" + event.Room + "\n"
-		ret += "DESCRIPTION;ENCODING=QUOTED-PRINTABLE:" + bluemonday.StrictPolicy().Sanitize(strings.Replace(event.Abstract, "\n", "\\n", -1)) + "\\n\\nconfplanner: last synchronised: " + now.Format(time.RFC1123) + "\n"
-		ret += "END:VEVENT\n"
+		ret += "BEGIN:VEVENT\r\n"
+		ret += "SUMMARY:" + event.Title + "\r\n"
+		ret += "UID:" + now.Format("20060102T150405Z") + "-" + strconv.Itoa(counter) + "\r\n"
+		ret += "DTSTAMP:" + now.Format("20060102T150405Z") + "\r\n"
+		ret += "DTSTART:" + utcStart.Format("20060102T150405Z") + "\r\n"
+		ret += "DTEND:" + utcEnd.Format("20060102T150405Z") + "\r\n"
+		ret += "LOCATION:" + event.Room + "\r\n"
+		ret += "DESCRIPTION;ENCODING=QUOTED-PRINTABLE:" + bluemonday.StrictPolicy().Sanitize(strings.Replace(event.Abstract, "\n", "\\n\\n", -1)) + "\\n\\nconfplanner: last synchronised: " + now.Format(time.RFC1123) + "\r\n"
+
+		ret += "BEGIN:VALARM\r\n"
+		ret += "TRIGGER:-PT10M\r\n"
+		ret += "ACTION:AUDIO\r\n"
+		ret += "END:VALARM\r\n"
+
+		ret += "END:VEVENT\r\n"
+
+		counter++
 	}
-	ret += "END:VCALENDAR\n"
+	ret += "END:VCALENDAR\r\n"
 
 	return ret, nil
 }

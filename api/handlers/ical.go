@@ -38,6 +38,7 @@ func GetIcal(icalService ical.Service, calendarService calendar.Service) fiber.H
 			return err
 		}
 
+		c.Set("Content-Type", "text/calendar")
 		return c.SendString(ical)
 	}
 }
