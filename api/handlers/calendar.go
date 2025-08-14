@@ -2,22 +2,23 @@ package handlers
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/LMBishop/confplanner/api/dto"
 	"github.com/LMBishop/confplanner/pkg/calendar"
-	"github.com/gofiber/fiber/v2"
+	"github.com/LMBishop/confplanner/pkg/session"
 )
 
-func GetCalendar(calendarService calendar.Service, baseURL string) fiber.Handler {
+func GetCalendar(calendarService calendar.Service, baseURL string) http.HandlerFunc {
 	// TODO create config service
-	return func(c *fiber.Ctx) error {
-		uid := c.Locals("uid").(int32)
+	return dto.WrapResponseFunc(func(w http.ResponseWriter, r *http.Request) error {
+		session := r.Context().Value("session").(*session.UserSession)
 
-		cal, err := calendarService.GetCalendarForUser(uid)
+		cal, err := calendarService.GetCalendarForUser(session.UserID)
 		if err != nil {
 			if errors.Is(err, calendar.ErrCalendarNotFound) {
 				return &dto.ErrorResponse{
-					Code:    fiber.StatusNotFound,
+					Code:    http.StatusNotFound,
 					Message: "Calendar not found",
 				}
 			}
@@ -26,7 +27,7 @@ func GetCalendar(calendarService calendar.Service, baseURL string) fiber.Handler
 		}
 
 		return &dto.OkResponse{
-			Code: fiber.StatusOK,
+			Code: http.StatusOK,
 			Data: &dto.GetCalendarResponse{
 				ID:   cal.ID,
 				Name: cal.Name,
@@ -34,20 +35,20 @@ func GetCalendar(calendarService calendar.Service, baseURL string) fiber.Handler
 				URL:  baseURL + "/calendar/ical?name=" + cal.Name + "&key=" + cal.Key,
 			},
 		}
-	}
+	})
 }
 
-func CreateCalendar(calendarService calendar.Service, baseURL string) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		uid := c.Locals("uid").(int32)
+func CreateCalendar(calendarService calendar.Service, baseURL string) http.HandlerFunc {
+	return dto.WrapResponseFunc(func(w http.ResponseWriter, r *http.Request) error {
+		session := r.Context().Value("session").(*session.UserSession)
 
-		cal, err := calendarService.CreateCalendarForUser(uid)
+		cal, err := calendarService.CreateCalendarForUser(session.UserID)
 		if err != nil {
 			return err
 		}
 
 		return &dto.OkResponse{
-			Code: fiber.StatusCreated,
+			Code: http.StatusCreated,
 			Data: &dto.CreateCalendarResponse{
 				ID:   cal.ID,
 				Name: cal.Name,
@@ -55,18 +56,18 @@ func CreateCalendar(calendarService calendar.Service, baseURL string) fiber.Hand
 				URL:  baseURL + "/calendar/ical?name=" + cal.Name + "&key=" + cal.Key,
 			},
 		}
-	}
+	})
 }
 
-func DeleteCalendar(calendarService calendar.Service) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		uid := c.Locals("uid").(int32)
+func DeleteCalendar(calendarService calendar.Service) http.HandlerFunc {
+	return dto.WrapResponseFunc(func(w http.ResponseWriter, r *http.Request) error {
+		session := r.Context().Value("session").(*session.UserSession)
 
-		err := calendarService.DeleteCalendarForUser(uid)
+		err := calendarService.DeleteCalendarForUser(session.UserID)
 		if err != nil {
 			if errors.Is(err, calendar.ErrCalendarNotFound) {
 				return &dto.ErrorResponse{
-					Code:    fiber.StatusNotFound,
+					Code:    http.StatusNotFound,
 					Message: "Calendar not found",
 				}
 			}
@@ -75,7 +76,7 @@ func DeleteCalendar(calendarService calendar.Service) fiber.Handler {
 		}
 
 		return &dto.OkResponse{
-			Code: fiber.StatusOK,
+			Code: http.StatusOK,
 		}
-	}
+	})
 }

@@ -1,0 +1,23 @@
+{
+  "name": "confplanner-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.2.0",
+    "@pinia/nuxt": "^0.9.0",
+    "@vite-pwa/nuxt": "^0.10.6",
+    "date-fns": "^4.1.0",
+    "lucide-vue-next": "^0.471.0",
+    "nuxt": "^3.15.1",
+    "pinia": "^2.3.0",
+    "vue": "latest",
+    "vue-router": "latest"
+  }
+}

@@ -1,22 +1,16 @@
 package api
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"errors"
-	"log/slog"
-	"time"
+	"net/http"
 
-	"github.com/LMBishop/confplanner/api/dto"
 	"github.com/LMBishop/confplanner/api/handlers"
 	"github.com/LMBishop/confplanner/api/middleware"
 	"github.com/LMBishop/confplanner/pkg/calendar"
 	"github.com/LMBishop/confplanner/pkg/favourites"
 	"github.com/LMBishop/confplanner/pkg/ical"
 	"github.com/LMBishop/confplanner/pkg/schedule"
+	"github.com/LMBishop/confplanner/pkg/session"
 	"github.com/LMBishop/confplanner/pkg/user"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
 type ApiServices struct {
@@ -25,64 +19,28 @@ type ApiServices struct {
 	ScheduleService   schedule.Service
 	CalendarService   calendar.Service
 	IcalService       ical.Service
+	SessionService    session.Service
 }
 
-func NewServer(apiServices ApiServices, baseURL string) *fiber.App {
-	sessionStore := session.New(session.Config{
-		Expiration:     7 * 24 * time.Hour,
-		KeyGenerator:   generateSessionToken,
-		KeyLookup:      "cookie:confplanner_session",
-		CookieSameSite: "Strict",
-		CookieSecure:   true,
-	})
+func NewServer(apiServices ApiServices, baseURL string) *http.ServeMux {
+	mustAuthenticate := middleware.MustAuthenticate(apiServices.UserService, apiServices.SessionService)
 
-	app := fiber.New(fiber.Config{
-		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			var ok *dto.OkResponse
-			if errors.As(err, &ok) {
-				return ctx.Status(ok.Code).JSON(ok)
-			}
+	mux := http.NewServeMux()
 
-			var e *dto.ErrorResponse
-			if errors.As(err, &e) {
-				return ctx.Status(e.Code).JSON(e)
-			}
+	mux.HandleFunc("POST /register", handlers.Register(apiServices.UserService))
+	mux.HandleFunc("POST /login", handlers.Login(apiServices.UserService, apiServices.SessionService))
+	mux.HandleFunc("POST /logout", mustAuthenticate(handlers.Register(apiServices.UserService)))
 
-			slog.Error("fiber runtime error", "error", err, "URL", ctx.OriginalURL())
-			return ctx.Status(500).JSON(dto.ErrorResponse{
-				Code:    500,
-				Message: "Internal Server Error",
-			})
-		},
-		AppName: "confplanner",
-	})
+	mux.HandleFunc("GET /favourites", mustAuthenticate(handlers.GetFavourites(apiServices.FavouritesService)))
+	mux.HandleFunc("POST /favourites", mustAuthenticate(handlers.CreateFavourite(apiServices.FavouritesService)))
+	mux.HandleFunc("DELETE /favourites", mustAuthenticate(handlers.DeleteFavourite(apiServices.FavouritesService)))
 
-	// app.Use(cors.New())
+	mux.HandleFunc("GET /schedule", mustAuthenticate(handlers.GetSchedule(apiServices.ScheduleService)))
 
-	requireAuthenticated := middleware.RequireAuthenticated(apiServices.UserService, sessionStore)
+	mux.HandleFunc("GET /calendar", mustAuthenticate(handlers.GetCalendar(apiServices.CalendarService, baseURL)))
+	mux.HandleFunc("POST /calendar", mustAuthenticate(handlers.CreateCalendar(apiServices.CalendarService, baseURL)))
+	mux.HandleFunc("DELETE /calendar", mustAuthenticate(handlers.DeleteCalendar(apiServices.CalendarService)))
+	mux.HandleFunc("/calendar/ical", handlers.GetIcal(apiServices.IcalService, apiServices.CalendarService))
 
-	app.Post("/register", handlers.Register(apiServices.UserService))
-	app.Post("/login", handlers.Login(apiServices.UserService, sessionStore))
-	app.Post("/logout", requireAuthenticated, handlers.Logout(sessionStore))
-
-	app.Get("/favourites", requireAuthenticated, handlers.GetFavourites(apiServices.FavouritesService))
-	app.Post("/favourites", requireAuthenticated, handlers.CreateFavourite(apiServices.FavouritesService))
-	app.Delete("/favourites", requireAuthenticated, handlers.DeleteFavourite(apiServices.FavouritesService))
-
-	app.Get("/schedule", requireAuthenticated, handlers.GetSchedule(apiServices.ScheduleService))
-
-	app.Get("/calendar", requireAuthenticated, handlers.GetCalendar(apiServices.CalendarService, baseURL))
-	app.Post("/calendar", requireAuthenticated, handlers.CreateCalendar(apiServices.CalendarService, baseURL))
-	app.Delete("/calendar", requireAuthenticated, handlers.DeleteCalendar(apiServices.CalendarService))
-	app.Use("/calendar/ical", handlers.GetIcal(apiServices.IcalService, apiServices.CalendarService))
-
-	return app
-}
-
-func generateSessionToken() string {
-	b := make([]byte, 100)
-	if _, err := rand.Read(b); err != nil {
-		return ""
-	}
-	return hex.EncodeToString(b)
+	return mux
 }

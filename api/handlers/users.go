@@ -2,18 +2,17 @@ package handlers
 
 import (
 	"errors"
-	"time"
+	"net/http"
 
 	"github.com/LMBishop/confplanner/api/dto"
+	"github.com/LMBishop/confplanner/pkg/session"
 	"github.com/LMBishop/confplanner/pkg/user"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
-func Register(service user.Service) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+func Register(service user.Service) http.HandlerFunc {
+	return dto.WrapResponseFunc(func(w http.ResponseWriter, r *http.Request) error {
 		var request dto.RegisterRequest
-		if err := readBody(c, &request); err != nil {
+		if err := dto.ReadDto(r, &request); err != nil {
 			return err
 		}
 
@@ -21,12 +20,12 @@ func Register(service user.Service) fiber.Handler {
 		if err != nil {
 			if errors.Is(err, user.ErrUserExists) {
 				return &dto.ErrorResponse{
-					Code:    fiber.StatusConflict,
+					Code:    http.StatusConflict,
 					Message: "User with that username already exists",
 				}
 			} else if errors.Is(err, user.ErrNotAcceptingRegistrations) {
 				return &dto.ErrorResponse{
-					Code:    fiber.StatusForbidden,
+					Code:    http.StatusForbidden,
 					Message: "This service is not currently accepting registrations",
 				}
 			}
@@ -35,18 +34,18 @@ func Register(service user.Service) fiber.Handler {
 		}
 
 		return &dto.OkResponse{
-			Code: fiber.StatusCreated,
+			Code: http.StatusCreated,
 			Data: &dto.RegisterResponse{
 				ID: createdUser.ID,
 			},
 		}
-	}
+	})
 }
 
-func Login(service user.Service, store *session.Store) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+func Login(service user.Service, store session.Service) http.HandlerFunc {
+	return dto.WrapResponseFunc(func(w http.ResponseWriter, r *http.Request) error {
 		var request dto.LoginRequest
-		if err := readBody(c, &request); err != nil {
+		if err := dto.ReadDto(r, &request); err != nil {
 			return err
 		}
 
@@ -57,56 +56,43 @@ func Login(service user.Service, store *session.Store) fiber.Handler {
 
 		if user == nil {
 			return &dto.ErrorResponse{
-				Code:    fiber.StatusBadRequest,
+				Code:    http.StatusBadRequest,
 				Message: "Username and password combination not found",
 			}
 		}
 
-		s, err := store.Get(c)
+		session, err := store.Create(user.ID, user.Username, r.RemoteAddr, r.UserAgent())
 		if err != nil {
 			return err
 		}
 
-		if s.Fresh() {
-			uid := user.ID
-			sid := s.ID()
-
-			s.Set("uid", uid)
-			s.Set("sid", sid)
-			s.Set("ip", c.Context().RemoteIP().String())
-			s.Set("login", time.Unix(time.Now().Unix(), 0).UTC().String())
-			s.Set("ua", string(c.Request().Header.UserAgent()))
-
-			err = s.Save()
-			if err != nil {
-				return err
-			}
+		cookie := &http.Cookie{
+			Name:  "confplanner_session",
+			Value: session.Token,
 		}
+		http.SetCookie(w, cookie)
 
 		return &dto.OkResponse{
-			Code: fiber.StatusOK,
+			Code: http.StatusOK,
 			Data: &dto.LoginResponse{
 				ID:       user.ID,
 				Username: user.Username,
 			},
 		}
-	}
+	})
 }
 
-func Logout(store *session.Store) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		s, err := store.Get(c)
-		if err != nil {
-			return err
-		}
+func Logout(store session.Service) http.HandlerFunc {
+	return dto.WrapResponseFunc(func(w http.ResponseWriter, r *http.Request) error {
+		session := r.Context().Value("session").(*session.UserSession)
 
-		err = s.Destroy()
+		err := store.Destroy(session.SessionID)
 		if err != nil {
 			return err
 		}
 
 		return &dto.OkResponse{
-			Code: fiber.StatusNoContent,
+			Code: http.StatusNoContent,
 		}
-	}
+	})
 }

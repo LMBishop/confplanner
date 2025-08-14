@@ -3,16 +3,19 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/LMBishop/confplanner/api"
-	config "github.com/LMBishop/confplanner/internal"
+	"github.com/LMBishop/confplanner/internal/config"
 	"github.com/LMBishop/confplanner/pkg/calendar"
 	"github.com/LMBishop/confplanner/pkg/database"
 	"github.com/LMBishop/confplanner/pkg/favourites"
 	"github.com/LMBishop/confplanner/pkg/ical"
 	"github.com/LMBishop/confplanner/pkg/schedule"
+	"github.com/LMBishop/confplanner/pkg/session"
 	"github.com/LMBishop/confplanner/pkg/user"
+	"github.com/LMBishop/confplanner/web"
 )
 
 func main() {
@@ -46,18 +49,25 @@ func run() error {
 	}
 	calendarService := calendar.NewService(pool)
 	icalService := ical.NewService(favouritesService, scheduleService)
+	sessionService := session.NewMemoryStore()
 
-	app := api.NewServer(api.ApiServices{
+	mux := http.NewServeMux()
+	api := api.NewServer(api.ApiServices{
 		UserService:       userService,
 		FavouritesService: favouritesService,
 		ScheduleService:   scheduleService,
 		CalendarService:   calendarService,
 		IcalService:       icalService,
+		SessionService:    sessionService,
 	}, c.BaseURL)
+	web := web.NewWebFileServer()
 
-	slog.Info("Server is listening", "host", c.Server.Host, "port", c.Server.Port)
+	mux.Handle("/api/", http.StripPrefix("/api", api))
+	mux.Handle("/", web)
 
-	if err := app.Listen(fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port)); err != nil {
+	slog.Info("starting HTTP server", "host", c.Server.Host, "port", c.Server.Port)
+
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port), mux); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 

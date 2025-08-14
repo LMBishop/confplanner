@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('./reset.css');
+
+:root {
+  --color-accent: #6366f1;
+  --color-primary: #4f46e5;
+  --color-primary-dark: #4338ca;
+  --color-primary-light: #cdcde9;
+  --color-favourite: #f6e05e;
+  --color-error: #cf2f27;
+  --color-error-light: #f8d7da;
+  --color-error-dark: #ad1f2b;
+  --color-success-light: #d1e7dd;
+
+  --color-text: #000;
+  --color-text-error: #cf2f27;
+  --color-text-success: #3d9970;
+  --color-text-muted: #4b5563;
+  --color-text-muted-light: #6b7280;
+  --color-background: #fff;
+  --color-background-muted: #f3f4f6;
+  --color-background-primary: var(--color-primary-light);
+  --color-background-error: var(--color-error-light);
+  --color-background-error-muted: #f8d7da;
+  --color-background-success: var(--color-success-light);
+  --color-background-success-muted: #b5d0c4;
+  --color-border: #d1d9e0;
+  --color-border-error-light: #f1aeb5;
+  --color-border-success-light: #a3cfbb;
+  --color-border-primary-light: #c4b5fd;
+  
+  --color-hover: rgba(0, 0, 0, 0.04);
+
+  --text-smaller: 0.75rem;
+  --text-small: 0.875rem;
+  --text-normal: 1rem;
+  --text-large: 1.25rem;
+  --text-larger: 1.5rem;
+  --text-x-large: 1.875rem;
+  --text-xx-large: 2.25rem;
+  
+  --font-sans-seif: 'Inter', sans-serif;
+}
+
+html, body {
+  font-family: var(--font-sans-seif);
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.register-link:hover {
+  color: var(--color-primary-dark); 
+}
+
+h1 {
+  font-size: var(--text-xx-large);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: var(--text-x-large);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h3 {
+  font-size: var(--text-large);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h4 {
+  font-size: var(--text-normal);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+p {
+  font-size: var(--text-normal);
+  line-height: 1.3;
+  margin-bottom: 0.5rem;
+}
+
+ul {
+  list-style-type: disc;
+  list-style-position: inside;
+  margin: 0.5rem 0 1rem 1rem;
+  line-height: 1.3;
+}
+
+span.text-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}
