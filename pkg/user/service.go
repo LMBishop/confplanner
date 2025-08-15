@@ -9,6 +9,7 @@ import (
 	"github.com/LMBishop/confplanner/pkg/database/sqlc"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -17,7 +18,6 @@ type Service interface {
 	CreateUser(username string, password string) (*sqlc.User, error)
 	GetUserByName(username string) (*sqlc.User, error)
 	GetUserByID(id int32) (*sqlc.User, error)
-	Authenticate(username string, password string) (*sqlc.User, error)
 }
 
 var (
@@ -43,18 +43,30 @@ func (s *service) CreateUser(username string, password string) (*sqlc.User, erro
 		return nil, ErrNotAcceptingRegistrations
 	}
 
+	var passwordHash pgtype.Text
 	queries := sqlc.New(s.pool)
 
-	var passwordBytes = []byte(password)
+	if password != "" {
+		var passwordBytes = []byte(password)
 
-	hash, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
-	if err != nil {
-		return nil, fmt.Errorf("could not hash password: %w", err)
+		hash, err := bcrypt.GenerateFromPassword(passwordBytes, bcrypt.DefaultCost)
+		if err != nil {
+			return nil, fmt.Errorf("could not hash password: %w", err)
+		}
+
+		passwordHash = pgtype.Text{
+			String: string(hash),
+			Valid:  true,
+		}
+	} else {
+		passwordHash = pgtype.Text{
+			Valid: false,
+		}
 	}
 
 	user, err := queries.CreateUser(context.Background(), sqlc.CreateUserParams{
 		Username: strings.ToLower(username),
-		Password: string(hash),
+		Password: passwordHash,
 	})
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -93,29 +105,4 @@ func (s *service) GetUserByID(id int32) (*sqlc.User, error) {
 	}
 
 	return &user, nil
-}
-
-func (s *service) Authenticate(username string, password string) (*sqlc.User, error) {
-	random, err := bcrypt.GenerateFromPassword([]byte("00000000"), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := s.GetUserByName(username)
-	if err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			bcrypt.CompareHashAndPassword(random, []byte(password))
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return user, nil
 }

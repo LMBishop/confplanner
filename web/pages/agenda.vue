@@ -14,9 +14,6 @@ const favouriteEvents = computed(() => {
 
 const calendarStatus = ref('pending' as 'pending' | 'idle');
 const calendarLink = ref('')
-const calendarLinkWithPageProtocol = computed(() => {
-  return window.location.protocol + '//' + calendarLink.value;
-});
 
 const refConfirmDeleteDialog = ref<typeof Dialog>();
 
@@ -97,7 +94,7 @@ function deleteCalendar() {
         <div v-else-if="calendarStatus === 'idle'" class="calendar">
           <template v-if="calendarLink">
             <span>You can add your agenda to your own calendar using the iCal link below</span>
-            <Input :value="calendarLinkWithPageProtocol" readonly/>
+            <Input :value="calendarLink" readonly/>
             <Button @click="refConfirmDeleteDialog!.show()" :loading="calendarAction">Delete calendar</Button>
           </template>
           <template v-else>

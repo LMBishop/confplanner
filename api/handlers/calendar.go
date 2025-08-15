@@ -32,7 +32,7 @@ func GetCalendar(calendarService calendar.Service, baseURL string) http.HandlerF
 				ID:   cal.ID,
 				Name: cal.Name,
 				Key:  cal.Key,
-				URL:  baseURL + "/calendar/ical?name=" + cal.Name + "&key=" + cal.Key,
+				URL:  baseURL + "/api/calendar/ical?name=" + cal.Name + "&key=" + cal.Key,
 			},
 		}
 	})

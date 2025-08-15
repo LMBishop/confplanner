@@ -4,25 +4,33 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"regexp"
 )
 
-//go:generate npm ci
+//go:generate npm install
 //go:generate npm run generate
 
 //go:embed all:.output/public
 var fsys embed.FS
+var urlFileRegexp = regexp.MustCompile(`[\w\-/]+\.[a-zA-Z]+$`)
 
 type WebFileServer struct {
-	server http.Handler
+	root    fs.FS
+	handler http.Handler
 }
 
 func NewWebFileServer() *WebFileServer {
 	fsys, _ := fs.Sub(fsys, ".output/public")
 	return &WebFileServer{
-		server: http.FileServerFS(fsys),
+		root:    fsys,
+		handler: http.FileServerFS(fsys),
 	}
 }
 
 func (fs *WebFileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fs.server.ServeHTTP(w, r)
+	if p := r.URL.Path; p != "/" && !urlFileRegexp.MatchString(p) {
+		http.ServeFileFS(w, r, fs.root, "index.html")
+		return
+	}
+	fs.handler.ServeHTTP(w, r)
 }

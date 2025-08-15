@@ -8,6 +8,7 @@ import (
 
 	"github.com/LMBishop/confplanner/api"
 	"github.com/LMBishop/confplanner/internal/config"
+	"github.com/LMBishop/confplanner/pkg/auth"
 	"github.com/LMBishop/confplanner/pkg/calendar"
 	"github.com/LMBishop/confplanner/pkg/database"
 	"github.com/LMBishop/confplanner/pkg/favourites"
@@ -50,6 +51,32 @@ func run() error {
 	calendarService := calendar.NewService(pool)
 	icalService := ical.NewService(favouritesService, scheduleService)
 	sessionService := session.NewMemoryStore()
+	authService := auth.NewService()
+
+	if c.Auth.EnableBasicAuth {
+		authService.RegisterAuthProvider("basic", auth.NewBasicAuthProvider(userService))
+	}
+	for _, authProvider := range c.Auth.AuthProviders {
+		provider, err := auth.NewOIDCAuthProvider(
+			userService,
+			authProvider.Name,
+			authProvider.ClientID,
+			authProvider.ClientSecret,
+			authProvider.Endpoint,
+			fmt.Sprintf("%s/login/%s", c.BaseURL, authProvider.Identifier),
+			authProvider.LoginFilter,
+			authProvider.UserSyncFilter,
+			authProvider.LoginFilterAllowedValues,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create OIDC auth provider: %w", err)
+		}
+
+		err = authService.RegisterAuthProvider(authProvider.Identifier, provider)
+		if err != nil {
+			return fmt.Errorf("failed to register OIDC auth provider: %w", err)
+		}
+	}
 
 	mux := http.NewServeMux()
 	api := api.NewServer(api.ApiServices{
@@ -59,6 +86,7 @@ func run() error {
 		CalendarService:   calendarService,
 		IcalService:       icalService,
 		SessionService:    sessionService,
+		AuthService:       authService,
 	}, c.BaseURL)
 	web := web.NewWebFileServer()
 

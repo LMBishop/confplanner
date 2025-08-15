@@ -1,4 +1,4 @@
-export default function useFetchFavourites() {
+export default function() {
     const favouritesStore = useFavouritesStore();
     const errorStore = useErrorStore();
     const config = useRuntimeConfig();

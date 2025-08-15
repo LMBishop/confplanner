@@ -1,4 +1,4 @@
-export default function useFetchFavourites() {
+export default function() {
     const scheduleStore = useScheduleStore();
     const errorStore = useErrorStore();
     const config = useRuntimeConfig();
@@ -10,7 +10,7 @@ export default function useFetchFavourites() {
       onResponse: ({ response }) => {
         if (!response.ok) {
           if (response.status === 401) {
-            navigateTo({ name: 'login', state: { error: 'Sorry, your session has expired' } });
+            navigateTo({ path: '/login', state: { error: 'Sorry, your session has expired' } });
           } else {
             errorStore.setError(response._data.message || 'An unknown error occurred');
           }
@@ -18,9 +18,6 @@ export default function useFetchFavourites() {
 
         if (response._data) {
           scheduleStore.setSchedule((response._data as any).data.schedule);
-          errorStore.setError("Schedule set");
-        } else {
-          errorStore.setError("Invalid response returned by server");
         }
       },
     });

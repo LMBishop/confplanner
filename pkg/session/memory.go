@@ -2,7 +2,7 @@ package session
 
 import (
 	"crypto/rand"
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"sync"
 	"time"
@@ -91,5 +91,5 @@ func generateSessionToken() string {
 	if _, err := rand.Read(b); err != nil {
 		return ""
 	}
-	return hex.EncodeToString(b)
+	return base64.StdEncoding.EncodeToString(b)
 }

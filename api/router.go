@@ -5,6 +5,7 @@ import (
 
 	"github.com/LMBishop/confplanner/api/handlers"
 	"github.com/LMBishop/confplanner/api/middleware"
+	"github.com/LMBishop/confplanner/pkg/auth"
 	"github.com/LMBishop/confplanner/pkg/calendar"
 	"github.com/LMBishop/confplanner/pkg/favourites"
 	"github.com/LMBishop/confplanner/pkg/ical"
@@ -20,6 +21,7 @@ type ApiServices struct {
 	CalendarService   calendar.Service
 	IcalService       ical.Service
 	SessionService    session.Service
+	AuthService       auth.Service
 }
 
 func NewServer(apiServices ApiServices, baseURL string) *http.ServeMux {
@@ -27,9 +29,10 @@ func NewServer(apiServices ApiServices, baseURL string) *http.ServeMux {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /register", handlers.Register(apiServices.UserService))
-	mux.HandleFunc("POST /login", handlers.Login(apiServices.UserService, apiServices.SessionService))
-	mux.HandleFunc("POST /logout", mustAuthenticate(handlers.Register(apiServices.UserService)))
+	mux.HandleFunc("POST /register", handlers.Register(apiServices.UserService, apiServices.AuthService))
+	mux.HandleFunc("GET /login", handlers.GetLoginOptions(apiServices.AuthService))
+	mux.HandleFunc("POST /login/{provider}", handlers.Login(apiServices.AuthService, apiServices.SessionService))
+	mux.HandleFunc("POST /logout", mustAuthenticate(handlers.Logout(apiServices.SessionService)))
 
 	mux.HandleFunc("GET /favourites", mustAuthenticate(handlers.GetFavourites(apiServices.FavouritesService)))
 	mux.HandleFunc("POST /favourites", mustAuthenticate(handlers.CreateFavourite(apiServices.FavouritesService)))
