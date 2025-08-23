@@ -36,8 +36,8 @@ func WrapResponseFunc(dtoFunc func(http.ResponseWriter, *http.Request) error) ht
 	}
 }
 
-func WriteDto(w http.ResponseWriter, r *http.Request, o error) {
-	if o, ok := o.(Response); ok {
+func WriteDto(w http.ResponseWriter, r *http.Request, err error) {
+	if o, ok := err.(Response); ok {
 		data, err := json.Marshal(o)
 		if err != nil {
 			w.WriteHeader(500)
@@ -49,6 +49,6 @@ func WriteDto(w http.ResponseWriter, r *http.Request, o error) {
 		w.Write(data)
 	} else {
 		w.WriteHeader(500)
-		slog.Error("internal server error handling request", "error", o)
+		slog.Error("internal server error handling request", "error", err)
 	}
 }

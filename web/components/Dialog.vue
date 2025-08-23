@@ -72,7 +72,7 @@ const onDialogClick = (e: MouseEvent) => {
 <style scoped>
 dialog {
   outline: none;
-  border-radius: 0.5rem;
+  border-radius: 2px;
   padding: 1rem;
   width: 1000px;
   margin: 0;

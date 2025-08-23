@@ -43,7 +43,7 @@ const getHostname = (url: string) => new URL(url).hostname;
     </div>
 
     <div>
-      <span class="event-track"><NuxtLink :to="'/tracks/' + event.track.slug">{{ event.track.name }}</NuxtLink> &bull;</span> <a v-if="event.url" class="event-url" :href="event.url" target="_blank">view on {{ getHostname(event.url)}}</a>
+      <span v-if="event.track" class="event-track"><NuxtLink :to="'/tracks/' + event.track.slug">{{ event.track.name }}</NuxtLink> &bull;</span> <a v-if="event.url" class="event-url" :href="event.url" target="_blank">view on {{ getHostname(event.url)}}</a>
     </div>
   </div>
 </template>

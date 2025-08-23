@@ -1,4 +1,4 @@
-package schedule
+package conference
 
 import (
 	"encoding/xml"

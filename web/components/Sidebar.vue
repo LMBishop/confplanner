@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import { LucideClock, LucideRadio } from "lucide-vue-next";
 
 const scheduleStore = useScheduleStore();
+const conferenceStore = useConferenceStore();
 const errorStore = useErrorStore();
 
 const timer = ref();
@@ -30,31 +31,35 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="sidebar">
-    <Panel class="conference">
-      <span class="conference-title">{{ scheduleStore.schedule?.conference.title }}</span>
-      <span class="conference-venue">{{ scheduleStore.schedule?.conference.venue }}</span>
-      <span class="conference-city">{{ scheduleStore.schedule?.conference.city }}</span>
+    <Panel class="conference" kind="top">
+      <template v-if="conferenceStore.id && conferenceStore.title">
+        <span class="conference-title">{{ conferenceStore.title }}</span>
+        <span class="conference-venue">{{ conferenceStore.venue }}</span>
+        <span class="conference-city">{{ conferenceStore.city }}</span>
+      </template>
       
-      <Button kind="secondary" @click="errorStore.setError('This doesn\'t do anything yet :-)')">Change conference</Button>
+      <Button kind="secondary" @click="navigateTo('/conferences')">Change conference</Button>
     </Panel>
     
-    <Panel kind="success" class="ongoing" v-if="ongoing">
-      <span>This conference is ongoing</span>
-      <Button kind="primary" :icon="LucideRadio" @click="navigateTo('/live')">View live</Button>
-    </Panel> 
+    <template v-if="scheduleStore.schedule != null">
+      <Panel kind="success" class="ongoing" v-if="ongoing">
+        <span>This conference is ongoing</span>
+        <Button kind="primary" :icon="LucideRadio" @click="navigateTo('/live')">View live</Button>
+      </Panel> 
 
-    <Panel kind="error" class="finished" v-else-if="finished">
-      <span>This conference has finished</span>
-    </Panel> 
-    
-    <Panel class="upcoming" v-else>
-      <span class="text-icon"><LucideClock /> <span>Starts in {{ startsIn }}</span></span>
-    </Panel>
-    
-    <Nav />
+      <Panel kind="error" class="finished" v-else-if="finished">
+        <span>This conference has finished</span>
+      </Panel> 
+      
+      <Panel class="upcoming" v-else>
+        <span class="text-icon"><LucideClock /> <span>Starts in {{ startsIn }}</span></span>
+      </Panel>
+      
+      <Nav />
+    </template>
 
     <div class="info">
-      <span>Times listed are in local time ({{ scheduleStore.schedule?.conference.timeZoneName }})</span>
+      <span v-if="scheduleStore.schedule != null">Times listed are in local time ({{ scheduleStore.schedule?.conference.timeZoneName }})</span>
       
       <Version />
     </div>
@@ -74,7 +79,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 1rem;
   font-size: var(--text-small);
-  font-style: oblique;
+  font-style: italic;
   text-align: center;
 }
 

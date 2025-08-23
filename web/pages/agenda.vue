@@ -8,6 +8,10 @@ const scheduleStore = useScheduleStore();
 const errorStore = useErrorStore();
 const config = useRuntimeConfig();
 
+definePageMeta({
+  middleware: ['logged-in', 'conference-selected']
+})
+
 const favouriteEvents = computed(() => {
   return scheduleStore.events.filter((event) => favouritesStore.isFavourite(event));
 });
@@ -19,44 +23,28 @@ const refConfirmDeleteDialog = ref<typeof Dialog>();
 
 const calendarAction = ref(false);
 
-useFetch(config.public.baseURL + '/calendar', {
-  method: 'GET',
-  server: false,
-  lazy: true,
-  onResponse: ({ response }) => {
-    if (!response.ok) {
-      if (response.status !== 404) {
-        errorStore.setError(response._data.message || 'An unknown error occurred');
-      }
-    } else if (response._data) {
-      calendarLink.value = (response._data as any).data.url;
-    }
-    calendarStatus.value = 'idle';
-  },
-});
-
 function generateCalendar() {
   calendarAction.value = true;
-  useFetch(config.public.baseURL + '/calendar', {
+  $api(config.public.baseURL + '/calendar', {
     method: 'POST',
     server: false,
     lazy: true,
-    onResponseError: ({ response }) => {
-      errorStore.setError(response._data.message || 'An unknown error occurred');
-      calendarAction.value = false;
-    },
     onResponse: ({ response }) => {
+      calendarAction.value = false;
+      if (!response.ok) {
+        errorStore.setError(response._data.message || 'An unknown error occurred');
+        return
+      }
       if (response._data) {
         calendarLink.value = (response._data as any).data.url;
       }
-      calendarAction.value = false;
     },
   });
 }
 
 function deleteCalendar() {
   calendarAction.value = true;
-  useFetch(config.public.baseURL + '/calendar', {
+  $api(config.public.baseURL + '/calendar', {
     method: 'DELETE',
     server: false,
     onResponseError: ({ response }) => {
@@ -69,6 +57,24 @@ function deleteCalendar() {
     },
   });
 }
+
+onMounted(() => {
+  $api(config.public.baseURL + '/calendar', {
+    method: 'GET',
+    server: false,
+    lazy: true,
+    onResponse: ({ response }) => {
+      calendarStatus.value = 'idle';
+      if (!response.ok) {
+        if (response.status !== 404) {
+          errorStore.setError(response._data.message || 'Could not fetch calendar');
+        }
+      } else if (response._data) {
+        calendarLink.value = (response._data as any).data.url;
+      }
+    },
+  });
+})
 
 </script>
 

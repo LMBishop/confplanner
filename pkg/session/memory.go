@@ -40,7 +40,7 @@ func (s *memoryStore) GetBySID(sid uint) *UserSession {
 	return s.sessionsBySID[sid]
 }
 
-func (s *memoryStore) Create(uid int32, username string, ip string, ua string) (*UserSession, error) {
+func (s *memoryStore) Create(uid int32, username string, ip string, ua string, admin bool) (*UserSession, error) {
 	token := generateSessionToken()
 
 	s.lock.Lock()
@@ -65,6 +65,7 @@ func (s *memoryStore) Create(uid int32, username string, ip string, ua string) (
 		IP:        ip,
 		UserAgent: ua,
 		LoginTime: time.Now(),
+		Admin:     admin,
 	}
 	s.sessionsByToken[token] = session
 	s.sessionsBySID[sessionId] = session

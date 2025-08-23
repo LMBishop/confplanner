@@ -2,14 +2,22 @@
 import { TrainTrack } from 'lucide-vue-next';
 import Panel from '~/components/Panel.vue';
 
+definePageMeta({
+  middleware: ['logged-in', 'conference-selected']
+})
 const scheduleStore = useScheduleStore();
 </script>
 
 <template>
-  <Panel v-if="scheduleStore.schedule" title="Tracks" :icon="TrainTrack">
+  <div v-if="scheduleStore.status === 'pending'" class="loading">
+    <span class="loading-text">
+      <Spinner color="var(--color-text-muted)" />Updating schedule...
+    </span>
+  </div>
+  <Panel v-else title="Tracks" :icon="TrainTrack">
     <ul class="tracks-list">
       <li 
-        v-for="track in scheduleStore.schedule.tracks" 
+        v-for="track in scheduleStore.schedule?.tracks" 
         :key="track.name" 
         class="tracks-item"
       >

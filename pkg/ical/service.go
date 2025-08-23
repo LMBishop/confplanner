@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/LMBishop/confplanner/pkg/conference"
 	"github.com/LMBishop/confplanner/pkg/database/sqlc"
 	"github.com/LMBishop/confplanner/pkg/favourites"
-	"github.com/LMBishop/confplanner/pkg/schedule"
 	"github.com/microcosm-cc/bluemonday"
 )
 
@@ -23,28 +23,31 @@ var (
 
 type service struct {
 	favouritesService favourites.Service
-	scheduleService   schedule.Service
+	conferenceService conference.Service
 }
 
 func NewService(
 	favouritesService favourites.Service,
-	scheduleService schedule.Service,
+	conferenceService conference.Service,
 ) Service {
 	return &service{
 		favouritesService: favouritesService,
-		scheduleService:   scheduleService,
+		conferenceService: conferenceService,
 	}
 }
 
 func (s *service) GenerateIcalForCalendar(calendar sqlc.Calendar) (string, error) {
-	favourites, err := s.favouritesService.GetFavouritesForUser(calendar.UserID)
+	favourites, err := s.favouritesService.GetAllFavouritesForUser(calendar.UserID)
 	if err != nil {
 		return "", err
 	}
 
-	events := make([]schedule.Event, 0)
+	events := make([]conference.Event, 0)
 	for _, favourite := range *favourites {
-		event := s.scheduleService.GetEventByID(favourite.EventID.Int32)
+		event, err := s.conferenceService.GetEventByID(favourite.ConferenceID, favourite.EventID.Int32)
+		if err != nil {
+			continue
+		}
 		events = append(events, *event)
 	}
 

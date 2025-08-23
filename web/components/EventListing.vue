@@ -10,6 +10,7 @@ const { event, showRelativeTime } = defineProps<{
 }>();
 
 const selectedEventStore = useSelectedEventStore();
+const conferenceStore = useConferenceStore();
 const favouritesStore = useFavouritesStore();
 const errorStore = useErrorStore();
 const config = useRuntimeConfig();
@@ -43,9 +44,10 @@ const addFavourite = async () => {
   addingToFavourite.value = true;
   
   try {
-    const res = await $fetch(config.public.baseURL + '/favourites', {
+    const res = await $api(config.public.baseURL + '/favourites', {
       method: 'POST',
       body: JSON.stringify({
+        conferenceId: conferenceStore.id,
         eventGuid: event.guid,
         eventId: event.id,
       }),
@@ -70,7 +72,7 @@ const removeFavourite = async () => {
   addingToFavourite.value = true;
 
   try {
-    await $fetch(config.public.baseURL + '/favourites', {
+    await $api(config.public.baseURL + '/favourites', {
       method: 'DELETE',
       body: JSON.stringify({
         eventGuid: event.guid,
@@ -102,9 +104,9 @@ const removeFavourite = async () => {
       </span>
       <span class="event-title">{{ event.title }}</span>
       <span class="event-speaker">{{ event.persons.map(p => p.name).join(", ") }}</span>
-      <span class="event-track">{{ event.track.name }}</span>
+      <span class="event-track">{{ event.track?.name }}</span>
     </div>
-    <template v-if="!addingToFavourite" class="event-button">
+    <template v-if="!addingToFavourite && favouritesStore.status !== 'pending'" class="event-button">
       <StarIcon v-if="favouritesStore.isFavourite(event)" color="var(--color-favourite)" fill="var(--color-favourite)" class="event-button" @click="removeFavourite" />
       <StarIcon v-else color="var(--color-text-muted)" class="event-button" @click="addFavourite" />
     </template>

@@ -3,8 +3,9 @@ package dto
 import "github.com/LMBishop/confplanner/pkg/database/sqlc"
 
 type CreateFavouritesRequest struct {
-	GUID *string `json:"eventGuid"`
-	ID   *int32  `json:"eventId"`
+	ConferenceID int32   `json:"conferenceID" validate:"required"`
+	GUID         *string `json:"eventGuid"`
+	EventID      *int32  `json:"eventId"`
 }
 
 type CreateFavouritesResponse struct {
@@ -29,6 +30,7 @@ func (dst *GetFavouritesResponse) Scan(src sqlc.Favourite) {
 }
 
 type DeleteFavouritesRequest struct {
-	GUID *string `json:"eventGuid"`
-	ID   *int32  `json:"eventId"`
+	ConferenceID int32   `json:"conferenceID" validate:"required"`
+	GUID         *string `json:"eventGuid"`
+	EventID      *int32  `json:"eventId"`
 }

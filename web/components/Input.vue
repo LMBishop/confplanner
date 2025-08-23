@@ -82,7 +82,7 @@ input {
   width: 100%;
   padding: 0.5rem 0.75rem; 
   border: 1px solid #d1d5db; 
-  border-radius: 0.375rem; 
+  border-radius: 2px; 
   box-sizing: border-box;
   /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);  */
   font-family: var(--font-family);

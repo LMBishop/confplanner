@@ -15,15 +15,25 @@ type Calendar struct {
 	Key    string `json:"key"`
 }
 
+type Conference struct {
+	ID    int32       `json:"id"`
+	Url   string      `json:"url"`
+	Title pgtype.Text `json:"title"`
+	Venue pgtype.Text `json:"venue"`
+	City  pgtype.Text `json:"city"`
+}
+
 type Favourite struct {
-	ID        int32       `json:"id"`
-	UserID    int32       `json:"user_id"`
-	EventGuid pgtype.UUID `json:"event_guid"`
-	EventID   pgtype.Int4 `json:"event_id"`
+	ID           int32       `json:"id"`
+	UserID       int32       `json:"user_id"`
+	EventGuid    pgtype.UUID `json:"event_guid"`
+	EventID      pgtype.Int4 `json:"event_id"`
+	ConferenceID int32       `json:"conference_id"`
 }
 
 type User struct {
 	ID       int32       `json:"id"`
 	Username string      `json:"username"`
 	Password pgtype.Text `json:"password"`
+	Admin    bool        `json:"admin"`
 }

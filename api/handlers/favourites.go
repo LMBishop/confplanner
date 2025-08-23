@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/LMBishop/confplanner/api/dto"
 	"github.com/LMBishop/confplanner/pkg/favourites"
@@ -16,7 +17,7 @@ func CreateFavourite(service favourites.Service) http.HandlerFunc {
 			return err
 		}
 
-		if request.GUID == nil && request.ID == nil {
+		if request.GUID == nil && request.EventID == nil {
 			return &dto.ErrorResponse{
 				Code:    http.StatusBadRequest,
 				Message: "One of event GUID or event ID must be specified",
@@ -34,7 +35,7 @@ func CreateFavourite(service favourites.Service) http.HandlerFunc {
 			}
 		}
 
-		createdFavourite, err := service.CreateFavouriteForUser(session.UserID, uuid, request.ID)
+		createdFavourite, err := service.CreateFavouriteForUser(session.UserID, uuid, request.EventID, request.ConferenceID)
 		if err != nil {
 			return err
 		}
@@ -50,9 +51,17 @@ func CreateFavourite(service favourites.Service) http.HandlerFunc {
 
 func GetFavourites(service favourites.Service) http.HandlerFunc {
 	return dto.WrapResponseFunc(func(w http.ResponseWriter, r *http.Request) error {
+		conferenceID, err := strconv.Atoi(r.PathValue("id"))
+		if err != nil {
+			return &dto.ErrorResponse{
+				Code:    http.StatusBadRequest,
+				Message: "Bad conference ID",
+			}
+		}
+
 		session := r.Context().Value("session").(*session.UserSession)
 
-		favourites, err := service.GetFavouritesForUser(session.UserID)
+		favourites, err := service.GetFavouritesForUserConference(session.UserID, int32(conferenceID))
 		if err != nil {
 			return err
 		}
@@ -79,7 +88,7 @@ func DeleteFavourite(service favourites.Service) http.HandlerFunc {
 			return err
 		}
 
-		if request.GUID == nil && request.ID == nil {
+		if request.GUID == nil && request.EventID == nil {
 			return &dto.ErrorResponse{
 				Code:    http.StatusBadRequest,
 				Message: "One of event GUID or event ID must be specified",
@@ -96,7 +105,7 @@ func DeleteFavourite(service favourites.Service) http.HandlerFunc {
 			}
 		}
 
-		err = service.DeleteFavouriteForUserByEventDetails(session.UserID, uuid, request.ID)
+		err = service.DeleteFavouriteForUserByEventDetails(session.UserID, uuid, request.EventID, request.ConferenceID)
 		if err != nil {
 			if err == favourites.ErrNotFound {
 				return &dto.ErrorResponse{

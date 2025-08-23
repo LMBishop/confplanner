@@ -1,4 +1,8 @@
 <script setup lang="ts">
+definePageMeta({
+  middleware: ['logged-in', 'conference-selected']
+})
+
 const scheduleStore = useScheduleStore();
 
 const destination = ref()
@@ -13,6 +17,11 @@ if (scheduleStore.isConferenceOngoing()) {
 </script>
 
 <template>
+  <div v-if="scheduleStore.status === 'pending'" class="loading">
+    <span class="loading-text">
+      <Spinner color="var(--color-text-muted)" />Updating schedule...
+    </span>
+  </div>
   <Panel kind="success">
     <span class="text-icon">
       <Spinner />

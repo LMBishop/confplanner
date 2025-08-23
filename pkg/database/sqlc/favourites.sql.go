@@ -13,27 +13,34 @@ import (
 
 const createFavourite = `-- name: CreateFavourite :one
 INSERT INTO favourites (
-  user_id, event_guid, event_id
+  user_id, event_guid, event_id, conference_id
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 )
-RETURNING id, user_id, event_guid, event_id
+RETURNING id, user_id, event_guid, event_id, conference_id
 `
 
 type CreateFavouriteParams struct {
-	UserID    int32       `json:"user_id"`
-	EventGuid pgtype.UUID `json:"event_guid"`
-	EventID   pgtype.Int4 `json:"event_id"`
+	UserID       int32       `json:"user_id"`
+	EventGuid    pgtype.UUID `json:"event_guid"`
+	EventID      pgtype.Int4 `json:"event_id"`
+	ConferenceID int32       `json:"conference_id"`
 }
 
 func (q *Queries) CreateFavourite(ctx context.Context, arg CreateFavouriteParams) (Favourite, error) {
-	row := q.db.QueryRow(ctx, createFavourite, arg.UserID, arg.EventGuid, arg.EventID)
+	row := q.db.QueryRow(ctx, createFavourite,
+		arg.UserID,
+		arg.EventGuid,
+		arg.EventID,
+		arg.ConferenceID,
+	)
 	var i Favourite
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.EventGuid,
 		&i.EventID,
+		&i.ConferenceID,
 	)
 	return i, err
 }
@@ -50,17 +57,23 @@ func (q *Queries) DeleteFavourite(ctx context.Context, id int32) error {
 
 const deleteFavouriteByEventDetails = `-- name: DeleteFavouriteByEventDetails :execrows
 DELETE FROM favourites
-WHERE (event_guid = $1 OR event_id = $2) AND user_id = $3
+WHERE (event_guid = $1 OR event_id = $2) AND user_id = $3 AND conference_id = $4
 `
 
 type DeleteFavouriteByEventDetailsParams struct {
-	EventGuid pgtype.UUID `json:"event_guid"`
-	EventID   pgtype.Int4 `json:"event_id"`
-	UserID    int32       `json:"user_id"`
+	EventGuid    pgtype.UUID `json:"event_guid"`
+	EventID      pgtype.Int4 `json:"event_id"`
+	UserID       int32       `json:"user_id"`
+	ConferenceID int32       `json:"conference_id"`
 }
 
 func (q *Queries) DeleteFavouriteByEventDetails(ctx context.Context, arg DeleteFavouriteByEventDetailsParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteFavouriteByEventDetails, arg.EventGuid, arg.EventID, arg.UserID)
+	result, err := q.db.Exec(ctx, deleteFavouriteByEventDetails,
+		arg.EventGuid,
+		arg.EventID,
+		arg.UserID,
+		arg.ConferenceID,
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -68,7 +81,7 @@ func (q *Queries) DeleteFavouriteByEventDetails(ctx context.Context, arg DeleteF
 }
 
 const getFavouritesForUser = `-- name: GetFavouritesForUser :many
-SELECT id, user_id, event_guid, event_id FROM favourites
+SELECT id, user_id, event_guid, event_id, conference_id FROM favourites
 WHERE user_id = $1
 `
 
@@ -86,6 +99,43 @@ func (q *Queries) GetFavouritesForUser(ctx context.Context, userID int32) ([]Fav
 			&i.UserID,
 			&i.EventGuid,
 			&i.EventID,
+			&i.ConferenceID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getFavouritesForUserConference = `-- name: GetFavouritesForUserConference :many
+SELECT id, user_id, event_guid, event_id, conference_id FROM favourites
+WHERE user_id = $1 AND conference_id = $2
+`
+
+type GetFavouritesForUserConferenceParams struct {
+	UserID       int32 `json:"user_id"`
+	ConferenceID int32 `json:"conference_id"`
+}
+
+func (q *Queries) GetFavouritesForUserConference(ctx context.Context, arg GetFavouritesForUserConferenceParams) ([]Favourite, error) {
+	rows, err := q.db.Query(ctx, getFavouritesForUserConference, arg.UserID, arg.ConferenceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Favourite
+	for rows.Next() {
+		var i Favourite
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.EventGuid,
+			&i.EventID,
+			&i.ConferenceID,
 		); err != nil {
 			return nil, err
 		}

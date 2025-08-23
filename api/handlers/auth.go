@@ -34,23 +34,18 @@ func Login(authService auth.Service, store session.Service) http.HandlerFunc {
 		}
 
 		// TODO X-Forwarded-For
-		session, err := store.Create(user.ID, user.Username, r.RemoteAddr, r.UserAgent())
+		session, err := store.Create(user.ID, user.Username, r.RemoteAddr, r.UserAgent(), user.Admin)
 		if err != nil {
 			return err
 		}
-
-		cookie := &http.Cookie{
-			Name:  "confplanner_session",
-			Value: session.Token,
-			Path:  "/api",
-		}
-		http.SetCookie(w, cookie)
 
 		return &dto.OkResponse{
 			Code: http.StatusOK,
 			Data: &dto.LoginResponse{
 				ID:       user.ID,
+				Token:    session.Token,
 				Username: user.Username,
+				Admin:    session.Admin,
 			},
 		}
 	})

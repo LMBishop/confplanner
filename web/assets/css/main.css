@@ -100,3 +100,47 @@ span.text-icon {
   align-items: center;
   gap: 0.4em;
 }
+
+form {
+  display: grid;
+  gap: 1.5rem; 
+}
+
+div.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+label.form-label {
+  display: block;
+  font-size: 0.875rem; 
+  font-weight: 500;
+  color: #374151; 
+}
+
+div.form-input-container {
+  margin-top: 0.25rem; 
+}
+
+div.form-submit {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.loading-text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--text-normal);
+  color: var(--color-text-muted);
+}
+
+table {
+  width: 100%;
+}
+
+th {
+  font-weight: bold;
+  text-align: left;
+}

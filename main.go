@@ -10,10 +10,10 @@ import (
 	"github.com/LMBishop/confplanner/internal/config"
 	"github.com/LMBishop/confplanner/pkg/auth"
 	"github.com/LMBishop/confplanner/pkg/calendar"
+	"github.com/LMBishop/confplanner/pkg/conference"
 	"github.com/LMBishop/confplanner/pkg/database"
 	"github.com/LMBishop/confplanner/pkg/favourites"
 	"github.com/LMBishop/confplanner/pkg/ical"
-	"github.com/LMBishop/confplanner/pkg/schedule"
 	"github.com/LMBishop/confplanner/pkg/session"
 	"github.com/LMBishop/confplanner/pkg/user"
 	"github.com/LMBishop/confplanner/web"
@@ -44,12 +44,12 @@ func run() error {
 
 	userService := user.NewService(pool, c.AcceptRegistrations)
 	favouritesService := favourites.NewService(pool)
-	scheduleService, err := schedule.NewService(c.Conference.ScheduleURL)
+	conferenceService, err := conference.NewService(pool)
 	if err != nil {
 		return fmt.Errorf("failed to create schedule service: %w", err)
 	}
 	calendarService := calendar.NewService(pool)
-	icalService := ical.NewService(favouritesService, scheduleService)
+	icalService := ical.NewService(favouritesService, conferenceService)
 	sessionService := session.NewMemoryStore()
 	authService := auth.NewService()
 
@@ -82,7 +82,7 @@ func run() error {
 	api := api.NewServer(api.ApiServices{
 		UserService:       userService,
 		FavouritesService: favouritesService,
-		ScheduleService:   scheduleService,
+		ConferenceService: conferenceService,
 		CalendarService:   calendarService,
 		IcalService:       icalService,
 		SessionService:    sessionService,

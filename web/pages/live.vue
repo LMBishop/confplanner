@@ -4,6 +4,10 @@ import EventListing from '~/components/EventListing.vue';
 import Panel from '~/components/Panel.vue';
 import { type Event } from '~/stores/schedule';
 
+definePageMeta({
+  middleware: ['logged-in', 'conference-selected']
+})
+
 const favouritesStore = useFavouritesStore();
 const scheduleStore = useScheduleStore();
 
@@ -56,6 +60,11 @@ function isToday(date: Date): boolean {
 </script>
 
 <template>
+  <div v-if="scheduleStore.status === 'pending'" class="loading">
+    <span class="loading-text">
+      <Spinner color="var(--color-text-muted)" />Updating schedule...
+    </span>
+  </div>
   <Panel kind="emphasis" class="ongoing" v-if="happeningNow.length > 0" title="Now" :icon="Radio">
     <ul class="events-list">
       <li v-for="event in showAllHappeningNow ? happeningNow : favouritesHappeningNow" :key="event.id">

@@ -2,6 +2,10 @@
 import { TrainTrack } from 'lucide-vue-next';
 import { useScheduleStore } from '~/stores/schedule';
 
+definePageMeta({
+  middleware: ['logged-in', 'conference-selected']
+})
+
 const route = useRoute();
 const scheduleStore = useScheduleStore();
 
@@ -9,6 +13,11 @@ const track = scheduleStore.schedule?.tracks.find((track) => track.slug === rout
 </script>
 
 <template>
+  <div v-if="scheduleStore.status === 'pending'" class="loading">
+    <span class="loading-text">
+      <Spinner color="var(--color-text-muted)" />Updating schedule...
+    </span>
+  </div>
   <Panel v-if="track" :title="track.name" :breadcrumbs="[{ text: 'Tracks', to: '/tracks' }]" :icon="TrainTrack">
     <ul class="events-list">
       <li 

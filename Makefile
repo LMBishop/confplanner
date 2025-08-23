@@ -12,4 +12,4 @@ web:
 
 .PHONY: sqlc
 sqlc:
-	sqlc compile
+	sqlc generate

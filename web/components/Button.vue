@@ -48,7 +48,7 @@ button {
   gap: 0.4rem;
   padding: 0.5rem 1rem;
   border: 1px solid transparent;
-  border-radius: 0.375rem;
+  border-radius: 2px;
   font-size: var(--text-small);
   font-family: var(--font-family);
   font-weight: 500;

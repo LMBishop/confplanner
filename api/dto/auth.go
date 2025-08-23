@@ -11,12 +11,14 @@ type LoginOAuthCallbackRequest struct {
 }
 
 type LoginOAuthOutboundResponse struct {
-	URL string `json:"url" validate:"required"`
+	URL string `json:"url"`
 }
 
 type LoginResponse struct {
 	ID       int32  `json:"id"`
+	Token    string `json:"token"`
 	Username string `json:"username"`
+	Admin    bool   `json:"admin"`
 }
 
 type LoginOptionsResponse struct {

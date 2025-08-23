@@ -4,7 +4,7 @@ import { defineProps, type FunctionalComponent, type PropType } from 'vue';
 
 defineProps({
   kind: {
-    type: String as PropType<"normal" | "error" | "success" | "emphasis">,
+    type: String as PropType<"normal" | "top" | "error" | "success" | "emphasis">,
     required: false,
     default: 'normal',
   },
@@ -47,14 +47,11 @@ defineProps({
 <style>
 div.card {
   padding: 1rem; 
-  border-radius: 0.5rem; 
 }
 
 div.card-header {
   padding: 1rem 1rem;
   margin: -1rem -1rem 0 -1rem;
-  border-top-left-radius: 0.5rem;
-  border-top-right-radius: 0.5rem;;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -73,7 +70,7 @@ div.header-left > svg {
 }
 
 span.card-title {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
 }
 
@@ -99,15 +96,19 @@ span.breadcrumb > a:hover {
   color: var(--color-primary);
 }
 
-div.normal {
+div.normal, div.top {
   background-color: white;
   border: 0.1rem solid var(--color-border);
 }
 
-div.normal .card-header {
+div.normal .card-header, div.top .card-header {
   background-color: var(--color-background-muted);
   border-bottom: 1px solid var(--color-border);
   margin: -1rem -1rem 1rem -1rem;
+}
+
+div.top {
+  border-top: 3px solid var(--color-primary)
 }
 
 div.error {

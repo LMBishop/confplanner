@@ -17,7 +17,7 @@ INSERT INTO users (
 ) VALUES (
   $1, $2
 )
-RETURNING id, username, password
+RETURNING id, username, password, admin
 `
 
 type CreateUserParams struct {
@@ -28,7 +28,12 @@ type CreateUserParams struct {
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Password)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Admin,
+	)
 	return i, err
 }
 
@@ -43,31 +48,41 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, password FROM users
+SELECT id, username, password, admin FROM users
 WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id int32) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Admin,
+	)
 	return i, err
 }
 
 const getUserByName = `-- name: GetUserByName :one
-SELECT id, username, password FROM users
+SELECT id, username, password, admin FROM users
 WHERE username = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByName(ctx context.Context, username string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByName, username)
 	var i User
-	err := row.Scan(&i.ID, &i.Username, &i.Password)
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Password,
+		&i.Admin,
+	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, username, password FROM users
+SELECT id, username, password, admin FROM users
 ORDER BY username
 `
 
@@ -80,7 +95,12 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	var items []User
 	for rows.Next() {
 		var i User
-		if err := rows.Scan(&i.ID, &i.Username, &i.Password); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Password,
+			&i.Admin,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -16,6 +16,7 @@ const basicAuthEnabled = ref(false)
 
 const route = useRoute()
 const config = useRuntimeConfig()
+const authStore = useAuthStore()
 const loginOptionsStore = useLoginOptionsStore()
 const headers = useRequestHeaders(['cookie'])
 
@@ -25,6 +26,17 @@ watch(loginOptions, (options) => {
   basicAuthEnabled.value = options.some(o => o.type === 'basic')
 })
 
+const authFail = (e: any) => {
+  if ((e as FetchError).data) {
+    error.value = e.data.message
+  } else {
+    error.value = "An unknown error occurred"
+  }
+
+  authenticating.value = false
+  authenticatingProvider.value = ''
+}
+
 const handleBasicAuth = async (e: Event, providerName: string) => {
   const target = e.target as HTMLFormElement;
   const formData = new FormData(target);
@@ -32,48 +44,43 @@ const handleBasicAuth = async (e: Event, providerName: string) => {
   authenticating.value = true
   authenticatingProvider.value = providerName
   
-  try {
-    await $fetch(config.public.baseURL + '/login/' + providerName, {
-      method: 'POST',
-      body: JSON.stringify(Object.fromEntries(formData)),
-      headers: headers,
-      server: false,
-    });
-    
-    navigateTo("/");
-  } catch (e: any) {
-    if ((e as FetchError).data) {
-      error.value = e.data.message
-    } else {
-      error.value = "An unknown error occurred"
-    }
+  $fetch(config.public.baseURL + '/login/' + providerName, {
+    method: 'POST',
+    body: JSON.stringify(Object.fromEntries(formData)),
+    headers: headers,
+    server: false,
+    onResponse: ({ response }) => {
+      authStore.token = response._data.data.token
+      authStore.username = response._data.data.username
+      authStore.admin = response._data.data.admin
 
-    authenticating.value = false
-    authenticatingProvider.value = ''
-  }
+      navigateTo("/");
+    },
+    onResponseError: authFail
+  });
+  
 }
 
 const handleOIDCAuth = async (providerName: string) => {
   authenticating.value = true
   authenticatingProvider.value = providerName
   
-  try {
-    let response: any = await $fetch(config.public.baseURL + '/login/' + providerName, {
-      method: 'POST',
-      headers: headers,
-      server: false,
-    });
-    navigateTo(response.data.url, { external: true })
-  } catch (e: any) {
-    if ((e as FetchError).data) {
-      error.value = e.data.message
-    } else {
-      error.value = "An unknown error occurred"
-    }
+  $fetch(config.public.baseURL + '/login/' + providerName, {
+    method: 'POST',
+    headers: headers,
+    server: false,
+    onResponse: ({ response }) => {
+      if (response._data.data.url) {
+        navigateTo(response._data.data.url, { external: true })
+      } else {
+        authStore.token = response._data.data.token
+        authStore.admin = response._data.data.admin
 
-    authenticating.value = false
-    authenticatingProvider.value = ''
-  }
+        navigateTo("/");
+      }
+    },
+    onResponseError: authFail
+  });
 }
 
 onMounted(async () => {
@@ -230,30 +237,9 @@ div.auth-form {
   gap: 1.5rem; 
 }
 
-form.basic-form {
-  display: grid;
-  gap: 1.5rem; 
-}
-
 div.auth-error {
   color: var(--color-text-error);
-  font-style: oblique;
-}
-
-div.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-label.form-label {
-  display: block;
-  font-size: 0.875rem; 
-  font-weight: 500;
-  color: #374151; 
-}
-
-div.form-input-container {
-  margin-top: 0.25rem; 
+  font-style: italic;
 }
 
 div.form-footer {

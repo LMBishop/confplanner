@@ -35,9 +35,5 @@ export const useFavouritesStore = defineStore('favourites', () => {
     })
   }
   
-  const setStatus = (newStatus: 'idle' | 'pending') => {
-    status.value = newStatus
-  }
-
-  return {favourites, status, setFavourites, addFavourite, removeFavourite, isFavourite, setStatus}
+  return {favourites, status, setFavourites, addFavourite, removeFavourite, isFavourite}
 })

@@ -8,7 +8,7 @@ definePageMeta({
   middleware: ["logged-in"]
 })
 
-const scheduleStore = useScheduleStore();
+const authStore = useAuthStore();
 const selectedEventStore = useSelectedEventStore();
 const errorStore = useErrorStore();
 const router = useRouter();
@@ -20,9 +20,6 @@ const refSelectedDialog = ref<typeof Dialog>();
 const refErrorDialog = ref<typeof Dialog>();
 
 const showHamburger = ref(false);
-
-fetchSchedule();
-fetchFavourites();
 
 watch(selectedEvent, () => {
   if (selectedEvent.value != null) {
@@ -52,6 +49,7 @@ router.afterEach(() => {
     <header>
       <div class="planner-header">
         <span class="text-icon planner-title" @click="navigateTo('/')"><BookHeart /> confplanner</span>
+        <NuxtLink class="logout logout-header" @click="logout">Log out {{ authStore.username }} {{ authStore.admin ? '(admin)' : ''}}</NuxtLink>
         <span class="hamburger" @click="showHamburger = !showHamburger">
           <LucideMenu :size="24" v-if="!showHamburger"/>
           <LucideX :size="24" v-else />
@@ -59,25 +57,20 @@ router.afterEach(() => {
       </div>
       <div class="hamburger-content" v-if="showHamburger">
         <Sidebar />
+
+        <div class="logout-hamburger">
+          <NuxtLink class="logout" @click="logout">Log out {{ authStore.username }} {{ authStore.admin ? '(admin)' : ''}}</NuxtLink>
+        </div>
       </div>
     </header>
     <div class="planner-layout">
-      <template v-if="scheduleStore.schedule">
-        <aside class="planner-sidebar">
-          <Sidebar />
-        </aside>
+      <aside class="planner-sidebar">
+        <Sidebar />
+      </aside>
 
-        <main class="planner-content">
-          <slot />
-        </main>
-      </template>
-      <template v-else>
-        <div class="loading">
-          <span class="loading-text">
-            <Spinner color="var(--color-text-muted)" />Updating schedule...
-          </span>
-        </div>
-      </template>
+      <main class="planner-content">
+        <slot />
+      </main>
     </div>
   </div>
   
@@ -109,7 +102,8 @@ header {
 div.planner-header {
   background-color: var(--color-background-muted); 
   color: var(--color-text-muted); 
-  border-bottom: 2px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-border);
   height: 3.5rem;
   display: flex;
   justify-content: space-between;
@@ -164,6 +158,15 @@ aside.planner-sidebar {
   font-size: var(--text-normal);
   color: var(--color-text-muted);
 }
+
+.logout {
+  cursor: pointer;
+}
+
+.logout-hamburger {
+  margin-top: 0.5rem;
+  text-align: right;
+}
   
 .loading {
   margin-top: 1rem;
@@ -183,6 +186,10 @@ aside.planner-sidebar {
   .planner-layout {
     flex-direction: column;
     padding: 0.5rem;
+  }
+
+  .logout-header {
+    display: none;
   }
   
   .hamburger {

@@ -5,7 +5,7 @@ export default function() {
     const errorStore = useErrorStore();
     const config = useRuntimeConfig();
     
-    loginOptionsStore.setStatus('pending')
+    loginOptionsStore.status = 'pending'
     
     $fetch(config.public.baseURL + '/login', {
       method: 'GET',
@@ -17,8 +17,8 @@ export default function() {
         }
 
         if (response._data) {
-          loginOptionsStore.setLoginOptions((response._data as any).data.options);
-          loginOptionsStore.setStatus('idle')
+          loginOptionsStore.loginOptions = (response._data as any).data.options;
+          loginOptionsStore.status = 'idle'
         }
       },
     });

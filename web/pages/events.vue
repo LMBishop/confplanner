@@ -2,12 +2,21 @@
 import { Calendar, SquareGanttChart } from 'lucide-vue-next';
 import { useScheduleStore } from '~/stores/schedule';
 
+definePageMeta({
+  middleware: ['logged-in', 'conference-selected']
+})
+
 const scheduleStore = useScheduleStore();
 
 </script>
 
 <template>
-  <Panel title="Events" :icon="SquareGanttChart" v-if="scheduleStore.schedule">
+  <div v-if="scheduleStore.status === 'pending'" class="loading">
+    <span class="loading-text">
+      <Spinner color="var(--color-text-muted)" />Updating schedule...
+    </span>
+  </div>
+  <Panel title="Events" :icon="SquareGanttChart" v-else>
     <div v-for="[day, events] of Object.entries(scheduleStore.eventsPerDay)" :key="day" class="events-container">
       <ul class="events-list">
         <li v-for="event in events" :key="event.id" class="event-item" :data-index="event.id">

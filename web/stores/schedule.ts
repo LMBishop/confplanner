@@ -74,6 +74,7 @@ interface Link {
 
 export const useScheduleStore = defineStore('schedule', () => {
   const schedule = ref(null as Schedule | null)
+  const status = ref('idle' as 'idle' | 'pending')
 
   const events = ref([] as Event[])
   const eventsPerDay = ref({} as { [key: string]: Event[] })
@@ -101,7 +102,9 @@ export const useScheduleStore = defineStore('schedule', () => {
 
           events.value.push(event)
 
-          event.track = tracks.value[event.track as unknown as string]
+          if (event.track) {
+            event.track = tracks.value[event.track as unknown as string]
+          }
         })
       })
     })
@@ -122,6 +125,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     
     eventsPerTrack.value = {}
     events.value.forEach(event => {
+      if (!event.track) return
       if (!eventsPerTrack.value[event.track.name]) {
         eventsPerTrack.value[event.track.name] = []
       }
@@ -147,7 +151,7 @@ export const useScheduleStore = defineStore('schedule', () => {
     return schedule.value?.conference.start || 0
   }
   
-  return {schedule, events, eventsPerDay, eventsPerTrack, setSchedule, isConferenceOngoing, isConferenceFinished, getStartDate}
+  return {schedule, events, eventsPerDay, eventsPerTrack, status, setSchedule, isConferenceOngoing, isConferenceFinished, getStartDate}
 })
 
 function normalizeDates(event: Event, timeZone: string) {
