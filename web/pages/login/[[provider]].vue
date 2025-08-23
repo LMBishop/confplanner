@@ -70,14 +70,7 @@ const handleOIDCAuth = async (providerName: string) => {
     headers: headers,
     server: false,
     onResponse: ({ response }) => {
-      if (response._data.data.url) {
-        navigateTo(response._data.data.url, { external: true })
-      } else {
-        authStore.token = response._data.data.token
-        authStore.admin = response._data.data.admin
-
-        navigateTo("/");
-      }
+      navigateTo(response._data.data.url, { external: true })
     },
     onResponseError: authFail
   });
@@ -109,6 +102,10 @@ onMounted(async () => {
       if (response.code === 307) {
         throw Error()
       }
+
+      authStore.token = response.data.token
+      authStore.username = response.data.username
+      authStore.admin = response.data.admin
 
       navigateTo("/");
     } catch (e: any) {
