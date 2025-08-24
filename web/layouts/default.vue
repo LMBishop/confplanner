@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookHeart, LucideMenu, LucideX } from "lucide-vue-next";
+import { LucideMenu, LucideX, Notebook } from "lucide-vue-next";
 import Dialog from "~/components/Dialog.vue";
 import EventDetail from "~/components/EventDetail.vue";
 import Sidebar from "~/components/Sidebar.vue";
@@ -48,7 +48,7 @@ router.afterEach(() => {
   <div class="planner-container">
     <header>
       <div class="planner-header">
-        <span class="text-icon planner-title" @click="navigateTo('/')"><BookHeart /> confplanner</span>
+        <span class="text-icon planner-title" @click="navigateTo('/')"><Notebook /> confplanner</span>
         <NuxtLink class="logout logout-header" @click="logout">Log out {{ authStore.username }} {{ authStore.admin ? '(admin)' : ''}}</NuxtLink>
         <span class="hamburger" @click="showHamburger = !showHamburger">
           <LucideMenu :size="24" v-if="!showHamburger"/>
@@ -101,7 +101,6 @@ header {
 
 div.planner-header {
   background-color: var(--color-background-muted); 
-  color: var(--color-text-muted); 
   border-top: 3px solid var(--color-primary);
   border-bottom: 1px solid var(--color-border);
   height: 3.5rem;
@@ -147,7 +146,7 @@ aside.planner-sidebar {
   max-width: 300px;
   position: sticky;
   align-self: flex-start;
-  top: calc(4.5rem + 2px);
+  top: calc(4.5rem + 2px + 3px);
 }
 
 .loading-text {

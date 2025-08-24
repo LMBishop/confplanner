@@ -75,6 +75,7 @@ const removeFavourite = async () => {
     await $api(config.public.baseURL + '/favourites', {
       method: 'DELETE',
       body: JSON.stringify({
+        conferenceId: conferenceStore.id,
         eventGuid: event.guid,
         eventId: event.id,
       }),

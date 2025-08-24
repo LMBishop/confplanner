@@ -24,6 +24,12 @@ const config = useRuntimeConfig();
 
 const status = ref('idle' as 'loading' | 'idle')
 
+const refConfirmDeleteDialog = ref<typeof Dialog>();
+
+const deleteConferenceId = ref(null as number | null)
+const deleteConferenceName = ref(null as string | null)
+const deleteAction = ref(false);
+
 const fetchConferences = () => {
   status.value = 'loading'
   $api(config.public.baseURL + '/conference', {
@@ -42,22 +48,22 @@ const fetchConferences = () => {
   })
 }
 
-const deleteConference = (id: number) => {
-  // todo make this better
+const deleteConference = () => {
   $api(config.public.baseURL + '/conference', {
     method: 'DELETE',
     body: {
-      id: id
+      id: deleteConferenceId.value
     },
     onResponse: ({ response }) => {
       if (!response.ok) {
         errorStore.setError(response._data.message || 'An unknown error occurred');
       }
+      fetchConferences()
     },
   })
 }
 
-const selectConference = async (c) => {
+const selectConference = async (c: any) => {
   setting.value = true
   conferenceStore.id = c.id
   try {
@@ -77,18 +83,22 @@ onMounted(fetchConferences)
   <template v-if="!setting">
     <Panel title="Conferences" :icon="MapPin">
       <span class="loading-text" v-if="status === 'loading'"><Spinner color="var(--color-text-muted)" />Fetching conferences...</span>
-      <div class="conference-list" v-if="conferences.length > 0 && status !== 'loading'">
+      <div class="conference-list" v-if="conferences?.length > 0 && status !== 'loading'">
         <template v-for="conference of conferences">
           <span class="title">{{ conference.title }}</span>
           <span>{{ conference.city }}</span>
           <span>{{ conference.venue }}</span>
           <span class="actions">
-            <Button v-if="authStore.admin" kind="secondary" @click="() => { deleteConference(conference.id) }">Delete</Button>
+            <Button v-if="authStore.admin" kind="secondary" @click="() => { 
+              deleteConferenceId = conference.id
+              deleteConferenceName = conference.title
+              refConfirmDeleteDialog!.show()
+            }">Delete</Button>
             <Button @click="() => { selectConference(conference) }">Select</Button>
           </span>
         </template>
       </div>
-      <p v-if="conferences.length == 0 && status !== 'loading'">
+      <p v-if="(conferences == null || conferences?.length == 0) && status !== 'loading'">
         There are no conferences to display.
       </p>
     </Panel>
@@ -102,6 +112,15 @@ onMounted(fetchConferences)
       <span class="loading-text"><Spinner color="var(--color-text-muted)" />Setting conference...</span>
     </div>
   </template>
+
+  <Dialog ref="refConfirmDeleteDialog" title="Delete conference" :confirmation="true" @submit="deleteConference" :fit-contents="true">
+    <span>Are you sure you want to delete "{{ deleteConferenceName }}"?</span>
+    <span>All favourites for all users for this conference will be lost and irrecoverable.</span>
+    <template v-slot:actions>
+      <Button kind="secondary" type="button" @click="refConfirmDeleteDialog!.close()">Cancel</Button>
+      <Button kind="danger" type="submit" :loading="deleteAction">Delete</Button>
+    </template>
+  </Dialog>
 </template>
 
 <style>
